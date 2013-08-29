@@ -1,0 +1,5 @@
+name: BlockMarket
+main: io.github.Egg101.BlockMaket.BlockMarket
+author: Egg
+version: 0.1
+depend: [SQLibrary, Vault, LogBlock]

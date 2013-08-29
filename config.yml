@@ -1,0 +1,91 @@
+# rc config.yml
+
+rewardmessage: "Rewarded!"
+
+mysqlinfo:
+  host: localhost
+  port: 3306
+  database: mydatabase
+  username: myusername
+  password: mypassword
+  
+
+# Note, material names  _MUST_  match this list http://jd.bukkit.org/apidocs/org/bukkit/Material.html
+# Note, money support is now gone.
+
+lumberjacks:
+  open: true
+  shares: 1200
+  value:
+    breakoaklog: 150
+    breaksprucelog: 175
+    breakbirchlog: 170
+    breakjunglewood: 170
+  returntax: 0.12
+  bufferpercent: 0.60
+
+carpenters:
+  open: true
+  shares: 500
+  value:
+    placeoakplank: 50
+    placespruceplank: 60
+    placebirchplank: 55
+    placejungleplank: 55
+    
+    placeoakstairs: 70
+    placesprucestairs: 80
+    placebirchstairs: 75
+    placejunglestairs: 75
+    placeoakslab: 30
+    
+    placespruceslab: 40
+    placebirchslab: 35
+    placejungleslab: 35
+  returntax: 0.10
+  bufferpercent: 0.20
+
+miners:
+  open: true
+  shares: 1500
+  value:
+    breakstone: 100
+    breakiron: 150
+    breakgold: 200
+    breakredstone: 200
+    breaklapis: 200
+    breakdiamond: 300
+  returntax: 0.08
+  bufferpercent: 0.40
+  
+  
+masons:
+  open: true
+  shares: 500
+  value:
+    placestone: 100
+    placecobble: 70
+    placebrick: 140
+    placestonebrick: 120
+    
+    placecobblestairs: 110
+    placebrickstairs: 220
+    placestonebrickstairs: 190
+    
+    placestoneslab: 60
+    placecobbleslab: 40
+    placebrickslab: 80
+    placestonebrickslab: 70
+  returntax: 0.08
+  bufferpercent: 0.40
+  
+
+diggers:
+  open: true
+  shares: 1500
+  value:
+    breakdirt: 75
+    breaksand: 100
+    breakclay: 175
+  returntax: 0.12
+  bufferpercent: 0.20

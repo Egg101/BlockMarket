@@ -59,16 +59,16 @@ public class BlockMarket extends JavaPlugin{
         // Set up time when stocks update
         setupChangeTime(plugin);
 
-		int lmbrVal = get_int("companies","value","name","lumber");
-		int carpVal = get_int("companies","value","name","carpenters");
-		int mineVal = get_int("companies","value","name","miners");
-		int masnVal = get_int("companies","value","name","masons");
-		int digrVal = get_int("companies","value","name","diggers");
         // Set up repeating task for adding up value every 30 minutes
         Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable()
         {
             public void run()
             {
+        		int lmbrVal = get_int("companies","value","name","lumber");
+        		int carpVal = get_int("companies","value","name","carpenters");
+        		int mineVal = get_int("companies","value","name","miners");
+        		int masnVal = get_int("companies","value","name","masons");
+        		int digrVal = get_int("companies","value","name","diggers");
         		
             	LogBlock logblock = (LogBlock)getServer().getPluginManager().getPlugin("LogBlock");
             	QueryParams params = new QueryParams(logblock);
@@ -221,8 +221,17 @@ public class BlockMarket extends JavaPlugin{
             	        }
             	    }
 		        } catch (SQLException ex) {
-	        	    // Do nothing or throw an error if you want
+					ex.printStackTrace();
 	        	}
+            	try {
+					mysql.query("UPDATE companies SET queue_val="+lmbrVal+" WHERE name='lumberjacks'");
+					mysql.query("UPDATE companies SET queue_val="+carpVal+" WHERE name='carpenters'");
+					mysql.query("UPDATE companies SET queue_val="+mineVal+" WHERE name='miners'");
+					mysql.query("UPDATE companies SET queue_val="+masnVal+" WHERE name='masons'");
+					mysql.query("UPDATE companies SET queue_val="+digrVal+" WHERE name='diggers'");
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
             }
         }, 36000L, 36000L);
     }

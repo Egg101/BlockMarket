@@ -1,6 +1,6 @@
 # rc config.yml
 
-rewardmessage: "Rewarded!"
+world: "world"
 
 mysqlinfo:
   host: localhost
@@ -9,10 +9,6 @@ mysqlinfo:
   username: myusername
   password: mypassword
   
-
-# Note, material names  _MUST_  match this list http://jd.bukkit.org/apidocs/org/bukkit/Material.html
-# Note, money support is now gone.
-
 lumberjacks:
   open: true
   shares: 1200
@@ -37,8 +33,8 @@ carpenters:
     placesprucestairs: 80
     placebirchstairs: 75
     placejunglestairs: 75
-    placeoakslab: 30
     
+    placeoakslab: 30
     placespruceslab: 40
     placebirchslab: 35
     placejungleslab: 35
@@ -54,7 +50,7 @@ miners:
     breakgold: 200
     breakredstone: 200
     breaklapis: 200
-    breakdiamond: 300
+    breakdiamond: 500
   returntax: 0.08
   bufferpercent: 0.40
   
@@ -86,6 +82,7 @@ diggers:
   value:
     breakdirt: 75
     breaksand: 100
+    breakgravel: 150
     breakclay: 175
   returntax: 0.12
   bufferpercent: 0.20

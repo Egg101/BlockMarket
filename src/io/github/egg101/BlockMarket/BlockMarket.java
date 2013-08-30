@@ -4,6 +4,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Calendar;
 import java.util.logging.Logger;
 
 import lib.PatPeter.SQLibrary.Database;
@@ -14,8 +15,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import de.diddiz.LogBlock.BlockChange;
+import de.diddiz.LogBlock.LogBlock;
+import de.diddiz.LogBlock.QueryParams;
+import de.diddiz.LogBlock.QueryParams.BlockChangeType;
 
 public class BlockMarket extends JavaPlugin{
 	Logger log;
@@ -23,11 +30,14 @@ public class BlockMarket extends JavaPlugin{
     public static Economy econ = null;
     String validCompanies = "lumberjacks carpenters miners masons diggers";
     String validSymbols = "LMBR CARP MINE MASN DIGR";
+    Plugin plugin;
+    
     @Override
     public void onEnable(){
 		log = this.getLogger();
 		log.info("[BlockMarket] Enabled");
-    	
+		plugin = getServer().getPluginManager().getPlugin("BlockMarket");
+
 		// Set up config
 	    File file = new File(this.getDataFolder(), "config.yml");
 	    if (!file.exists()) {
@@ -45,6 +55,176 @@ public class BlockMarket extends JavaPlugin{
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+        
+        // Set up time when stocks update
+        setupChangeTime(plugin);
+
+		int lmbrVal = get_int("companies","value","name","lumber");
+		int carpVal = get_int("companies","value","name","carpenters");
+		int mineVal = get_int("companies","value","name","miners");
+		int masnVal = get_int("companies","value","name","masons");
+		int digrVal = get_int("companies","value","name","diggers");
+        // Set up repeating task for adding up value every 30 minutes
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable()
+        {
+            public void run()
+            {
+        		
+            	LogBlock logblock = (LogBlock)getServer().getPluginManager().getPlugin("LogBlock");
+            	QueryParams params = new QueryParams(logblock);
+            	params.bct = BlockChangeType.CREATED;
+            	params.limit = -1;
+            	params.since = 30;
+            	params.world = getServer().getWorld(getConfig().getString("world"));
+            	params.needType = true;
+            	params.needData = true;
+
+            	try {
+            	    for (BlockChange bc : logblock.getBlockChanges(params)) {
+            	        System.out.println(bc.toString());
+            	        switch (bc.type) {
+            	        	  // LMBR
+            	        	case 17:
+            	        		if (bc.data == 1) { //spruce log
+            	        			lmbrVal = lmbrVal + 175;
+            	        		} else if (bc.data == 2) { //birch log
+                	        		lmbrVal = lmbrVal + 170;
+                	        	} else if (bc.data == 3) { //jungle log
+            	        			lmbrVal = lmbrVal + 170;
+                	        	} else { // oak log
+                	        		lmbrVal = lmbrVal + 150;
+                	        	}
+            	        		break;
+            	        		
+            	        	  // CARP
+            	        	case 5:
+            	        		if (bc.data == 1) { //spruce plank
+            	        			carpVal = carpVal + 60;
+            	        		} else if (bc.data == 2) { //birch plank
+                	        		carpVal = carpVal + 55;
+                	        	} else if (bc.data == 3) { //jungle plank
+            	        			carpVal = carpVal + 55;
+                	        	} else { // oak plank
+                	        		carpVal = carpVal + 50;
+                	        	}
+            	        		break;
+            	        	case 53: //oak stairs
+            	        		carpVal = carpVal + 70;
+            	        		break;
+            	        	case 134: //spruce stairs
+            	        		carpVal = carpVal + 80;
+            	        		break;
+            	        	case 135: //birch stairs
+            	        		carpVal = carpVal + 75;
+            	        		break;
+            	        	case 136: //jungle stairs
+            	        		carpVal = carpVal + 75;
+            	        		break;
+            	        	case 44: //oak slab
+            	        		if (bc.data == 2) { //oak slab
+            	        			carpVal = carpVal + 30;
+            	        		} else if (bc.data == 3) { //cobble slab
+            	        			masnVal = masnVal + 40;
+            	        		} else if (bc.data == 4) { //brick slab
+            	        			masnVal = masnVal + 80;
+            	        		} else if (bc.data == 5) { //sb slab
+            	        			masnVal = masnVal + 70;
+            	        		} else { // stone slab
+            	        			masnVal = masnVal + 60;
+            	        		}
+            	        		break;
+            	        	case 126: //slabs
+            	        		if (bc.data == 1) { //spruce slab
+            	        			carpVal = carpVal + 40;
+            	        		} else if (bc.data == 2) { //birch slab
+                	        		carpVal = carpVal + 35;
+                	        	} else if (bc.data == 3) { //jungle slab
+            	        			carpVal = carpVal + 35;
+                	        	}
+            	        		break;
+            	        		
+            	        	  // MASN
+            	        	case 1: //stone
+            	        		masnVal = masnVal + 100;
+            	        		break;
+            	        	case 4: //cobble
+            	        		masnVal = masnVal + 100;
+            	        		break;
+            	        	case 45: //brick
+            	        		masnVal = masnVal + 100;
+            	        		break;
+            	        	case 98: //stonebrick
+            	        		masnVal = masnVal + 100;
+            	        		break;
+            	        	case 67: //cobblestairs
+            	        		masnVal = masnVal + 100;
+            	        		break;
+            	        	case 108: //brickstairs
+            	        		masnVal = masnVal + 100;
+            	        		break;
+            	        	case 109: //stonebrickstairs
+            	        		masnVal = masnVal + 100;
+            	        		break;
+            	        	// case 44: SEE CARP ABOVE
+            	        }
+            	    }
+            	} catch (SQLException ex) {
+            	    // Do nothing or throw an error if you want
+            	}
+
+            	// Destruction
+            	params.bct = BlockChangeType.DESTROYED;
+            	
+            	try {
+            	    for (BlockChange bc : logblock.getBlockChanges(params)) {
+            	        System.out.println(bc.toString());
+            	        switch (bc.type) {
+            	        	  // MINE
+            	        	case 1: // stone
+            	        		mineVal = mineVal + 100;
+            	        		break;
+            	        	case 16: // coal
+            	        		mineVal = mineVal + 125;
+            	        		break;
+            	        	case 15: // iron
+            	        		mineVal = mineVal + 150;
+            	        		break;
+            	        	case 14: // gold
+            	        		mineVal = mineVal + 200;
+            	        		break;
+            	        	case 73: // redstone
+            	        		mineVal = mineVal + 200;
+            	        		break;
+            	        	case 21: // lapis
+            	        		mineVal = mineVal + 200;
+            	        		break;
+            	        	case 56: // diamond
+            	        		mineVal = mineVal + 500;
+            	        		break;
+            	        		
+              	        	  // DIGR
+              	        	case 2: // grass
+              	        		digrVal = digrVal + 75;
+              	        		break;
+              	        	case 3: // dirt
+              	        		digrVal = digrVal + 75;
+              	        		break;
+              	        	case 12: // sand
+              	        		digrVal = digrVal + 100;
+              	        		break;
+              	        	case 13: // gravel
+              	        		digrVal = digrVal + 150;
+              	        		break;
+              	        	case 82: // clay
+              	        		digrVal = digrVal + 175;
+              	        		break;
+            	        }
+            	    }
+		        } catch (SQLException ex) {
+	        	    // Do nothing or throw an error if you want
+	        	}
+            }
+        }, 36000L, 36000L);
     }
     @Override
     public void onDisable() {
@@ -135,12 +315,12 @@ public class BlockMarket extends JavaPlugin{
     			int sql_value = get_int("companies","value","name",companyName);
     			int sql_share_amt = get_int("companies","share_amt","name",companyName);
     			int sql_playershares = get_int("shareholders",companyName,"playername",playername);
-    			int sql_returntax = get_int("companies","returntax","name",companyName);
+    			double cnf_returntax = getConfig().getDouble(companyName+".returntax");
     			
     			int shares_updated = sql_playershares + sql_shares_unsold; // New share amt for company
     			int newshareamount = sql_playershares - amount; // New share amt for player
     			
-    			double payment = amount * (sql_value / sql_share_amt) * sql_returntax;
+    			double payment = amount * (sql_value / sql_share_amt) * cnf_returntax;
     			payment = round(payment, 2);
     			
     			// Error checking
@@ -170,7 +350,7 @@ public class BlockMarket extends JavaPlugin{
     				
     				// Gives money to player
 					econ.depositPlayer(playername, payment);
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.GREEN + "Successfully sold "+amount+" shares for $"+payment+". (Return tax was "+sql_returntax*100+"%)");
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.GREEN + "Successfully sold "+amount+" shares for $"+payment+". (Return tax was "+cnf_returntax*100+"%)");
     				
     			}
 			}
@@ -416,6 +596,28 @@ public class BlockMarket extends JavaPlugin{
 				// ============================//
 				//			 Methods	 	   //
 				// ============================//
+	public void setupChangeTime(Plugin plugin) {
+		Calendar cal = Calendar.getInstance();
+		long now = cal.getTimeInMillis();
+		if(cal.get(Calendar.HOUR_OF_DAY) >= 19)
+		    cal.add(Calendar.DATE, 1);  //do it tomorrow if now is after 7:00 pm
+		cal.set(Calendar.HOUR_OF_DAY, 1);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		long offset = cal.getTimeInMillis() - now;
+		long ticks = offset / 50;  //there are 50 milliseconds in a tick
+		Bukkit.getScheduler().scheduleSyncDelayedTask(plugin,new Runnable()
+	    {
+	        public void run()
+	        {
+	            //CODE THAT RUNS
+	            //AT 1:00 AM EVERY DAY
+	            //GOES HERE
+	        }
+	    }, ticks);
+	}
+	
 	public String get_str(String table, String varSelect, String varWhere, String valWhere) {
 		// Get string from MySQL
 		ResultSet rs;

@@ -1,5 +1,9 @@
 name: BlockMarket
-main: io.github.Egg101.BlockMaket.BlockMarket
+main: io.github.egg101.BlockMarket.BlockMarket
 author: Egg
 version: 0.1
-depend: [SQLibrary, Vault, LogBlock]
+depend: [Vault, LogBlock, SQLibrary]
+
+commands:
+   bm:
+      description: BlockMarket umbrella command

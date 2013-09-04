@@ -4,7 +4,9 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+//import java.text.SimpleDateFormat;
 import java.util.Calendar;
+//import java.util.Date;
 import java.util.logging.Logger;
 
 import lib.PatPeter.SQLibrary.Database;
@@ -31,19 +33,20 @@ public class BlockMarket extends JavaPlugin{
     String validCompanies = "lumberjacks carpenters miners masons diggers";
     String validSymbols = "LMBR CARP MINE MASN DIGR";
     Plugin plugin;
-    
+	   
+        		
     @Override
     public void onEnable(){
 		log = this.getLogger();
-		log.info("[BlockMarket] Enabled");
+		log.info("Enabled");
 		plugin = getServer().getPluginManager().getPlugin("BlockMarket");
 
 		// Set up config
 	    File file = new File(this.getDataFolder(), "config.yml");
 	    if (!file.exists()) {
-			log.info("[BlockMarket] Creating config.yml...");
+			log.info("Creating config.yml...");
 	        this.saveDefaultConfig();
-			log.info("[BlockMarket] Successfully created config.yml!");
+			log.info("Successfully created config.yml!");
 	    }
 	    
 	    // Set up SQL
@@ -64,24 +67,29 @@ public class BlockMarket extends JavaPlugin{
         {
             public void run()
             {
-        		int lmbrVal = get_int("companies","value","name","lumber");
-        		int carpVal = get_int("companies","value","name","carpenters");
-        		int mineVal = get_int("companies","value","name","miners");
-        		int masnVal = get_int("companies","value","name","masons");
-        		int digrVal = get_int("companies","value","name","diggers");
+            	//SimpleDateFormat ft = new SimpleDateFormat ("dd.MM.yyyy hh:mm:ss");
+                //String logblockLastTime = ft.format(dNow);
+            	log.info("Getting last changes and queueing!");
+        		int lmbrVal = get_int("companies","queue_val","name","lumber");
+        		int carpVal = get_int("companies","queue_val","name","carpenters");
+        		int mineVal = get_int("companies","queue_val","name","miners");
+        		int masnVal = get_int("companies","queue_val","name","masons");
+        		int digrVal = get_int("companies","queue_val","name","diggers");
         		
-            	LogBlock logblock = (LogBlock)getServer().getPluginManager().getPlugin("LogBlock");
-            	QueryParams params = new QueryParams(logblock);
-            	params.bct = BlockChangeType.CREATED;
-            	params.limit = -1;
-            	params.since = 30;
-            	params.world = getServer().getWorld(getConfig().getString("world"));
-            	params.needType = true;
-            	params.needData = true;
+        		LogBlock logblock = (LogBlock)getServer().getPluginManager().getPlugin("LogBlock");
+        		QueryParams params = new QueryParams(logblock);
+        		params.bct = BlockChangeType.CREATED;
+        		params.limit = -1;
+        		params.since = 30;
+        		params.world = getServer().getWorld(getConfig().getString("world"));
+        		params.needType = true;
+        		params.needData = true;
+        		params.needDate = true;
 
+            	log.info("queueing 4");
             	try {
             	    for (BlockChange bc : logblock.getBlockChanges(params)) {
-            	        System.out.println(bc.toString());
+            	        log.info("cr "+String.valueOf(bc.type));
             	        switch (bc.type) {
             	        	  // LMBR
             	        	case 17:
@@ -177,8 +185,8 @@ public class BlockMarket extends JavaPlugin{
             	
             	try {
             	    for (BlockChange bc : logblock.getBlockChanges(params)) {
-            	        System.out.println(bc.toString());
-            	        switch (bc.type) {
+            	        log.info("de "+String.valueOf(bc.replaced));
+            	        switch (bc.replaced) {
             	        	  // MINE
             	        	case 1: // stone
             	        		mineVal = mineVal + 100;
@@ -223,6 +231,7 @@ public class BlockMarket extends JavaPlugin{
 		        } catch (SQLException ex) {
 					ex.printStackTrace();
 	        	}
+            	log.info("queueing 5");
             	try {
 					mysql.query("UPDATE companies SET queue_val="+lmbrVal+" WHERE name='lumberjacks'");
 					mysql.query("UPDATE companies SET queue_val="+carpVal+" WHERE name='carpenters'");
@@ -233,11 +242,12 @@ public class BlockMarket extends JavaPlugin{
 					e.printStackTrace();
 				}
             }
-        }, 36000L, 36000L);
+        }, 800L, 800L); // 36000
     }
     @Override
     public void onDisable() {
-    	
+		log.info("Disabled");
+    	mysql.close();
     }
     
     
@@ -257,15 +267,17 @@ public class BlockMarket extends JavaPlugin{
     			if (companyName == "error") { return false; } // Giving error message is already handled in method. Exits onCommand
     			
     			int sql_shares_unsold = get_int("companies","shares_unsold","name",companyName);
+    			int sql_shares_sold = get_int("companies","shares_sold","name",companyName);
     			int sql_value = get_int("companies","value","name",companyName);
     			int sql_share_amt = get_int("companies","share_amt","name",companyName);
     			int sql_playershares = get_int("shareholders",companyName,"playername",playername);
     			
     			int shares_left = sql_shares_unsold - amount;
+    			int shares_sold_upd = sql_shares_sold + amount;
     			double cost = amount * (sql_value / sql_share_amt);
     			cost = round(cost, 2);
     			int newshareamount = sql_playershares + amount;
-    			
+
     			// Error checking
     			
     			if (sql_shares_unsold == 0) {
@@ -273,11 +285,11 @@ public class BlockMarket extends JavaPlugin{
     				error = true;
     			}
     			if (amount == 0) {
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.RED + "You can't buy 0 shares.");
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You can't buy 0 shares.");
     				error = true;
     			}
-    			if (sql_shares_unsold >= amount) {
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.RED + "You can't buy that many shares. There are only " + sql_shares_unsold + " shares for sale in that company.");
+    			if (amount > sql_shares_unsold ) {
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You can't buy that many shares. There are only " + sql_shares_unsold + " shares for sale in that company.");
     				error = true;
     			}
     			
@@ -285,7 +297,7 @@ public class BlockMarket extends JavaPlugin{
     			if (error == false) {
     				// Remove unsold shares from company
     				try {
-						mysql.query("UPDATE companies SET shares_unsold="+shares_left+" WHERE name='"+companyName+"';");
+						mysql.query("UPDATE companies SET shares_unsold="+shares_left+",shares_sold="+shares_sold_upd+" WHERE name='"+companyName+"';");
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
@@ -306,7 +318,8 @@ public class BlockMarket extends JavaPlugin{
 					
 					// Take due money from player
 					econ.withdrawPlayer(playername, cost);
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.GREEN + "Successfully bought "+amount+" shares for $"+cost+".");
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.GREEN + "Successfully bought "+amount+" shares for $"+cost+".");
+
     			}
 			} // END /bm buy [company] [amount]
 
@@ -321,24 +334,26 @@ public class BlockMarket extends JavaPlugin{
     			if (companyName == "error") { return false; } // Giving error message is already handled in method. Exits onCommand
 
     			int sql_shares_unsold = get_int("companies","shares_unsold","name",companyName);
+    			int sql_shares_sold = get_int("companies","shares_sold","name",companyName);
     			int sql_value = get_int("companies","value","name",companyName);
     			int sql_share_amt = get_int("companies","share_amt","name",companyName);
     			int sql_playershares = get_int("shareholders",companyName,"playername",playername);
     			double cnf_returntax = getConfig().getDouble(companyName+".returntax");
-    			
-    			int shares_updated = sql_playershares + sql_shares_unsold; // New share amt for company
+
+    			int shares_sold_upd = sql_shares_sold - amount;
+    			int shares_updated = amount + sql_shares_unsold; // New share amt for company
     			int newshareamount = sql_playershares - amount; // New share amt for player
     			
-    			double payment = amount * (sql_value / sql_share_amt) * cnf_returntax;
+    			double payment = amount * (sql_value / sql_share_amt) * (1-cnf_returntax);
     			payment = round(payment, 2);
     			
     			// Error checking
     			if (amount == 0) {
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.RED + "You can't sell 0 shares.");
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You can't sell 0 shares.");
     				error = true;
     			}
     			if (sql_playershares < amount) {
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.RED + "You only have " +sql_playershares+" shares to sell.");
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You only have " +sql_playershares+" shares to sell.");
     				error = true;
     			}
     			
@@ -352,17 +367,17 @@ public class BlockMarket extends JavaPlugin{
 					
     				// Give shares back to company
     				try {
-						mysql.query("UPDATE companies SET shares_unsold="+shares_updated+" WHERE name='"+companyName+"';");
+						mysql.query("UPDATE companies SET shares_unsold="+shares_updated+",shares_sold="+shares_sold_upd+" WHERE name='"+companyName+"';");
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
     				
     				// Gives money to player
 					econ.depositPlayer(playername, payment);
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.GREEN + "Successfully sold "+amount+" shares for $"+payment+". (Return tax was "+cnf_returntax*100+"%)");
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.GREEN + "Successfully sold "+amount+" shares for $"+payment+". (Return tax was "+cnf_returntax*100+"%)");
     				
     			}
-			}
+			} // end /bm sell [company] [amount]
 
     		//Gets [company] from companies.
     		//Gets symbol, value, share_amt, price (value/share_amt), returntax, and shares_unsold and lists.
@@ -381,51 +396,52 @@ public class BlockMarket extends JavaPlugin{
     			double price = sql_value / sql_share_amt;
     			price = round(price, 2);
     			int sql_shares_unsold = get_int("companies","shares_unsold","name",companyName);
-    			int sql_returntax = 	get_int("companies","returntax","name",companyName);
+    			double cfg_returntax = 	getConfig().getDouble(companyName + ".returntax");
     			
     			String lastchangePrefix = "";
     			if (sql_lastchange > 0) { lastchangePrefix = "+"; }
-    			else if (sql_lastchange < 0) { lastchangePrefix = "-"; }
+    			else if (sql_lastchange < 0) { lastchangePrefix = ""; }
 
 				player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + "Info for "+showCompanyName+ ChatColor.DARK_PURPLE +"----");
-				player.sendMessage(ChatColor.DARK_BLUE + "Ticker: $" + ChatColor.AQUA + sql_symbol + ChatColor.DARK_RED + " " + lastchangePrefix + sql_lastchange);
-				player.sendMessage(ChatColor.DARK_BLUE + "Company value: $" + ChatColor.AQUA + sql_value);
-				player.sendMessage(ChatColor.DARK_BLUE + "Total shares in company: " + ChatColor.AQUA + sql_share_amt);
-				player.sendMessage(ChatColor.DARK_BLUE + "Share price: $" + ChatColor.AQUA + price);
-				player.sendMessage(ChatColor.DARK_BLUE + "Shares for sale: " + ChatColor.AQUA + sql_shares_unsold);
-				player.sendMessage(ChatColor.DARK_BLUE + "Return tax: " + ChatColor.AQUA + sql_returntax + "%");
-				player.sendMessage(ChatColor.DARK_PURPLE +"-----------------");
+				player.sendMessage(ChatColor.BLUE + "Ticker: " + ChatColor.AQUA + sql_symbol + " " + lastchangePrefix + sql_lastchange);
+				player.sendMessage(ChatColor.BLUE + "Company value: " + ChatColor.AQUA + "$" + sql_value);
+				player.sendMessage(ChatColor.BLUE + "Total shares in company: " + ChatColor.AQUA + sql_share_amt);
+				player.sendMessage(ChatColor.BLUE + "Share price: " + ChatColor.AQUA + "$" + price);
+				player.sendMessage(ChatColor.BLUE + "Shares for sale: " + ChatColor.AQUA + sql_shares_unsold);
+				player.sendMessage(ChatColor.BLUE + "Return tax: " + ChatColor.AQUA + cfg_returntax + "%");
+				player.sendMessage(ChatColor.DARK_PURPLE +"--------------------");
     			
-			}
+			} // end /bm info [company]
     		
 			//-------- /bm ticker
     		if (args.length == 1 && args[0].equalsIgnoreCase("ticker")){
     			String[] companyNames = {"lumberjacks", "carpenters", "miners", "masons", "diggers"};
     			String[] tickerSymbols = new String[5];
-    			int[] lastChanges = new int[5];
+    			double[] lastChanges = new double[5];
     			
     			for (int i = 0; i<5; i++) {
     				tickerSymbols[i] = get_str("companies","symbol","name",companyNames[i]);
-        			lastChanges[i] =	get_int("companies","lastchange","name",companyNames[i]);
+        			lastChanges[i] = get_double("companies","lastchange","name",companyNames[i]);
     			}
     			
 
-    			String combinedMessage = "";
+    			String combinedMessage = "§5Ticker:   ";
     			for (int i = 0; i<5; i++) {
-    				combinedMessage.concat("§7"+companyNames[i]);
+    				combinedMessage = combinedMessage.concat("§7"+tickerSymbols[i]);
     				
     				if (lastChanges[i] > 0) {
-    					combinedMessage.concat("§a +");
+    					combinedMessage = combinedMessage.concat("§a +");
     				} else if (lastChanges[i] < 0) {
-    					combinedMessage.concat("§c -");
+    					combinedMessage = combinedMessage.concat("§c ");
     				} else {
-    					combinedMessage.concat("§f");
+    					combinedMessage = combinedMessage.concat("§f ");
     				}
-    				
-    				combinedMessage.concat(lastChanges[i] + "   ");
+
+					combinedMessage = combinedMessage.concat(String.valueOf(lastChanges[i]) + "   ");
     			}
-    			
-			}
+    			player.sendMessage(combinedMessage);
+			} // end /bm ticker
+    		
 			//-------- /bm portfolio (username)
     		if (args[0].equalsIgnoreCase("portfolio")){
     			if (args.length == 1) { // if no player specified
@@ -437,24 +453,24 @@ public class BlockMarket extends JavaPlugin{
     				
     				int playerValueLMBR = sharesLMBR*(get_int("companies","value","name","lumberjacks"))/(get_int("companies","share_amt","name","lumberjacks"));
     				int playerValueCARP = sharesCARP*(get_int("companies","value","name","carpenters"))/(get_int("companies","share_amt","name","carpenters"));
-    				int playerValueMINE = sharesLMBR*(get_int("companies","value","name","miners"))/(get_int("companies","share_amt","name","miners"));
-    				int playerValueMASN = sharesLMBR*(get_int("companies","value","name","masons"))/(get_int("companies","share_amt","name","masons"));
-    				int playerValueDIGR = sharesLMBR*(get_int("companies","value","name","diggers"))/(get_int("companies","share_amt","name","diggers"));
-    				
+    				int playerValueMINE = sharesMINE*(get_int("companies","value","name","miners"))/(get_int("companies","share_amt","name","miners"));
+    				int playerValueMASN = sharesMASN*(get_int("companies","value","name","masons"))/(get_int("companies","share_amt","name","masons"));
+    				int playerValueDIGR = sharesDIGR*(get_int("companies","value","name","diggers"))/(get_int("companies","share_amt","name","diggers"));
+
     				player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + "Your Stock Portfolio" + ChatColor.DARK_PURPLE +"----");
-    				player.sendMessage(ChatColor.DARK_BLUE + "Lumberjacks (LMBR): " + ChatColor.AQUA + sharesLMBR + " shares, total value $"+playerValueLMBR);
-    				player.sendMessage(ChatColor.DARK_BLUE + "Carpenters (CARP): " + ChatColor.AQUA + sharesCARP + " shares, total value $"+playerValueCARP);
-    				player.sendMessage(ChatColor.DARK_BLUE + "Miners (MINE): " + ChatColor.AQUA + sharesMINE + " shares, total value $"+playerValueMINE);
-    				player.sendMessage(ChatColor.DARK_BLUE + "Masons (MASN): " + ChatColor.AQUA + sharesMASN + " shares, total value $"+playerValueMASN);
-    				player.sendMessage(ChatColor.DARK_BLUE + "Diggers (DIGR): " + ChatColor.AQUA + sharesDIGR + " shares, total value $"+playerValueDIGR);
-    				player.sendMessage(ChatColor.DARK_PURPLE +"-----------------");
+    				player.sendMessage(ChatColor.BLUE + "Lumberjacks (LMBR): " + ChatColor.AQUA + sharesLMBR + " shares, total value " + ChatColor.GREEN + "$"+playerValueLMBR);
+    				player.sendMessage(ChatColor.BLUE + "Carpenters (CARP): " + ChatColor.AQUA + sharesCARP + " shares, total value " + ChatColor.GREEN + "$"+playerValueCARP);
+    				player.sendMessage(ChatColor.BLUE + "Miners (MINE): " + ChatColor.AQUA + sharesMINE + " shares, total value " + ChatColor.GREEN + "$"+playerValueMINE);
+    				player.sendMessage(ChatColor.BLUE + "Masons (MASN): " + ChatColor.AQUA + sharesMASN + " shares, total value " + ChatColor.GREEN + "$"+playerValueMASN);
+    				player.sendMessage(ChatColor.BLUE + "Diggers (DIGR): " + ChatColor.AQUA + sharesDIGR + " shares, total value " + ChatColor.GREEN + "$"+playerValueDIGR);
+    				player.sendMessage(ChatColor.DARK_PURPLE +"------------------------");
     			}
-    		}
+    		} // end /bm portfolio
 
 			//-------- /bm list
     		if (args.length > 0 && args[0].equalsIgnoreCase("list")){
     			//---- /bm list companies
-    			if (args.length == 1 && args[1].equalsIgnoreCase("companies")) {
+    			if (args.length == 2 && args[1].equalsIgnoreCase("companies")) {
     				player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + "Companies" + ChatColor.DARK_PURPLE +"----");
     				player.sendMessage(ChatColor.BLUE + "Lumberjacks (LMBR)");
     				player.sendMessage(ChatColor.BLUE + "Carpenters (CARP)");
@@ -465,8 +481,8 @@ public class BlockMarket extends JavaPlugin{
     				
     			}
     			//---- /bm list shareholders [company]
-    			if (args.length == 2 && args[1].equalsIgnoreCase("shareholders")) {
-        			String companyName = args[1].toLowerCase();
+    			else if (args.length == 3 && (args[1].equalsIgnoreCase("shareholders") || args[1].equalsIgnoreCase("sh"))) {
+        			String companyName = args[2].toLowerCase();
     				companyName = company_name_exists(player, companyName);
     				if (companyName == "error") { return false; } // Error message already handled in method
 
@@ -474,41 +490,52 @@ public class BlockMarket extends JavaPlugin{
     				int[] shares = new int[15];
     				
     				ResultSet rs = null;
-    				
+
     				// Get players with highest # of shares from that company
     				try {
 						rs = mysql.query("SELECT * FROM shareholders ORDER BY "+companyName+" DESC LIMIT 15");
 					} catch (SQLException e) {
-						// TODO Auto-generated catch block
+						player.sendMessage(ChatColor.DARK_PURPLE + "[BlockMarket] " + ChatColor.RED + "Error: There are no shareholders in that company, or it doesn't exist."); 
 						e.printStackTrace();
+						return false;
 					}
+					int a = 0;
+					
     				try {
 						if (rs.first()) {
-							 int i = 0;
 							    do {
-							    	shareholders[i] = rs.getString("playername");
-							    	shares[i] = rs.getInt(companyName);
-							        i++;
+				    				log.info("4");
+							    	shareholders[a] = rs.getString("playername");
+							    	shares[a] = rs.getInt(companyName);
+							        a++;
 							    } while(rs.next());
 						}
 					} catch (SQLException e) {
+							player.sendMessage(ChatColor.DARK_PURPLE + "[BlockMarket] " + ChatColor.RED + "Error: There are no shareholders in that company."); 
 							e.printStackTrace();
+							return false;
 					}
 
     				player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + "Shareholders in "+companyName + ChatColor.DARK_PURPLE +"----");
-    				for (int i=0; i<15; i++) {
-    					player.sendMessage(ChatColor.BLUE + shareholders[i] + ": " + shares[i] + " shares");
+    				for (int i=0; i<a; i++) {
+    					player.sendMessage(ChatColor.BLUE + shareholders[i] + ": " + String.valueOf(shares[i]) + " shares");
     					
     				}
-    				player.sendMessage(ChatColor.DARK_PURPLE +"-----------------");
+    				log.info("6");
+    				player.sendMessage(ChatColor.DARK_PURPLE +"-----------------------------");
+
     				
+    			} else {
+    				player.sendMessage(ChatColor.DARK_PURPLE + "[BlockMarket]" + ChatColor.RED + " Did you mean:");
+    				player.sendMessage(ChatColor.GRAY + "/bm list shareholders [company name]");
+    				player.sendMessage(ChatColor.GRAY + "/bm list companies");
     			}
-			}
+			} // end /bm list
 
 			//-------- /bm give [playername] [company] [amount]
     		if (args.length == 4 && args[0].equalsIgnoreCase("give")){
     			String companyName = args[2].toLowerCase();
-    			int amount = Integer.parseInt(args[2]);
+    			int amount = Integer.parseInt(args[3]);
     			
     			// Preliminary error check before SQL happens
     			companyName = company_name_exists(player,companyName);
@@ -523,11 +550,11 @@ public class BlockMarket extends JavaPlugin{
 				}
     			// Error checking
     			if (sql_playershares < amount) {
-    				player.sendMessage(ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.RED + "You only have " +sql_playershares+" shares to transfer.");
+    				player.sendMessage(ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You only have " +sql_playershares+" shares to transfer.");
     				error = true;
     			}
     			if (!Bukkit.getServer().getPlayer(args[2]).isOnline()) {
-    				player.sendMessage(ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.RED + "The recipient is not online. Remember it's case sensitive!");
+    				player.sendMessage(ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "The recipient is not online. Remember it's case sensitive!");
     				error = true;
     			}
     			
@@ -547,19 +574,31 @@ public class BlockMarket extends JavaPlugin{
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket]" + ChatColor.GREEN + "Successfully transferred "+amount+" shares to "+args[2]+".");
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.GREEN + "Successfully transferred "+amount+" shares to "+args[2]+".");
     			}
 			} // end /bm give [playername] [company] [amount]
+
+    		  // /bm connect
+    		if (args.length == 1 && (args[0].equalsIgnoreCase("connect") || args[0].equalsIgnoreCase("open"))){
+    			if (!mysql.isOpen()) {
+    				sqlConnection();
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.GREEN + "Successfully opened connection to MySQL.");
+    			} else {
+    				mysql.close();
+    				sqlConnection();
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.GREEN + "Successfully reopened connection to MySQL.");
+    			}
+    		} // end /bm connect
     		
     		return true;
     	} // end /bm
 
     	return false; 
-    }
+    } // end onCommand()
     
     
     public void sqlConnection() {
-	    log.info("[BlockMarket] Connecting to MySQL...");
+	    log.info("Connecting to MySQL...");
 		String host = getConfig().getString("mysqlinfo.host");
 		String port = getConfig().getString("mysqlinfo.port");
 		String dbname = getConfig().getString("mysqlinfo.database");
@@ -569,33 +608,34 @@ public class BlockMarket extends JavaPlugin{
 		mysql = new MySQL(this.getLogger(),"[BlockMarket] ",host,Integer.parseInt(port),dbname,user,password);
 		try {
 			mysql.open();
-		    log.info("[BlockMarket] Successfully connected to MySQL!");
 		} catch (Exception e) {
-			log.info("[BlockMarket] Could not connect to MySQL:");
 			log.info(e.getMessage());
 		}
+
+		if (mysql.isOpen()) { log.info("Successfully connected to MySQL!"); }
+		else { log.info("Could not connect to MySQL:"); }
 
 	}
 
 	public void sqlDoesDatabaseExist() {
         if(!(mysql.isTable("companies"))){
-    	    log.info("[BlockMarket] Creating MySQL table 'companies'...");
+    	    log.info("Creating MySQL table 'companies'...");
         	try {
     	    	mysql.query("CREATE TABLE rewardtable (playername VARCHAR(50),  rewardtime INT(10), IP VARCHAR(20), rewarded VARCHAR(5), one VARCHAR(5), two VARCHAR(5), three VARCHAR(5));");
-        	    log.info("[BlockMarket] Successfully created MySQL table!");
+        	    log.info("Successfully created MySQL table!");
         	} catch (Exception e) {
-        		log.info("[BlockMarket] Could not create MySQL table:");
+        		log.info("Could not create MySQL table!");
     			log.info(e.getMessage());
         	}
     	    	
         }
         if(!(mysql.isTable("shareholders"))){
-    	    log.info("[BlockMarket] Creating MySQL table 'shareholders'...");
+    	    log.info("Creating MySQL table 'shareholders'...");
         	try {
     	    	mysql.query("CREATE TABLE rewardtable (playername VARCHAR(50),  rewardtime INT(10), IP VARCHAR(20), rewarded VARCHAR(5), one VARCHAR(5), two VARCHAR(5), three VARCHAR(5));");
-        	    log.info("[BlockMarket] Successfully created MySQL table!");
+        	    log.info("Successfully created MySQL table!");
         	} catch (Exception e) {
-        		log.info("[BlockMarket] Could not create MySQL table:");
+        		log.info("Could not create MySQL table:");
     			log.info(e.getMessage());
         	}
     	    	
@@ -608,21 +648,119 @@ public class BlockMarket extends JavaPlugin{
 	public void setupChangeTime(Plugin plugin) {
 		Calendar cal = Calendar.getInstance();
 		long now = cal.getTimeInMillis();
-		if(cal.get(Calendar.HOUR_OF_DAY) >= 19)
-		    cal.add(Calendar.DATE, 1);  //do it tomorrow if now is after 7:00 pm
-		cal.set(Calendar.HOUR_OF_DAY, 1);
+		
+		log.info("HOUR_OF_DAY " + cal.get(Calendar.HOUR_OF_DAY));
+		log.info("MINUTE " + cal.get(Calendar.MINUTE));
+		
+		if(cal.get(Calendar.HOUR_OF_DAY) >= 1)
+		    cal.add(Calendar.DATE, 1);  // do it tomorrow if now is after 1 AM
+		cal.set(Calendar.HOUR_OF_DAY, 1); // 1 AM
 		cal.set(Calendar.MINUTE, 0);
 		cal.set(Calendar.SECOND, 0);
 		cal.set(Calendar.MILLISECOND, 0);
+		
 		long offset = cal.getTimeInMillis() - now;
 		long ticks = offset / 50;  //there are 50 milliseconds in a tick
+
 		Bukkit.getScheduler().scheduleSyncDelayedTask(plugin,new Runnable()
 	    {
 	        public void run()
 	        {
-	            //CODE THAT RUNS
-	            //AT 1:00 AM EVERY DAY
-	            //GOES HERE
+	        	if (!mysql.isOpen()) { sqlConnection(); }
+	        	// LMBR
+	        	int sql_current = get_int("companies","value","name","lumberjacks");
+	        	int sql_queue = get_int("companies","queue_val","name","lumberjacks");
+	        	int sql_share_amt = get_int("companies","share_amt","name","lumberjacks");
+	        	double keepPercent = 1 - getConfig().getDouble("lumberjacks.bufferpercent");
+	        	int change = 0;
+	        	double lastchange = 0;
+	        	int finalVal = sql_current;
+
+        		change = sql_queue - sql_current;
+        		change = (int)Math.round(change * keepPercent);
+        		lastchange = round((change/sql_share_amt),2);
+        		finalVal = finalVal + change;
+        		try {
+					mysql.query("UPDATE companies SET value="+finalVal+",lastchange="+lastchange+" WHERE name='lumberjacks';");
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
+	        	// CARP
+	        	sql_current = get_int("companies","value","name","carpenters");
+	        	sql_queue = get_int("companies","queue_val","name","carpenters");
+	        	sql_share_amt = get_int("companies","share_amt","name","carpenters");
+	        	keepPercent = 1 - getConfig().getDouble("carpenters.bufferpercent");
+	        	change = 0;
+	        	lastchange = 0;
+	        	finalVal = sql_current;
+
+	        	change = sql_queue - sql_current;
+        		change = (int)Math.round(change * keepPercent);
+        		lastchange = round((change/sql_share_amt),2);
+        		finalVal = finalVal + change;
+        		try {
+					mysql.query("UPDATE companies SET value="+finalVal+",lastchange="+lastchange+",queue_val='0' WHERE name='carpenters';");
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
+	        	// MINE
+	        	sql_current = get_int("companies","value","name","miners");
+	        	sql_queue = get_int("companies","queue_val","name","miners");
+	        	sql_share_amt = get_int("companies","share_amt","name","miners");
+	        	keepPercent = 1 - getConfig().getDouble("miners.bufferpercent");
+	        	change = 0;
+	        	lastchange = 0;
+	        	finalVal = sql_current;
+
+	        	change = sql_queue - sql_current;
+        		change = (int)Math.round(change * keepPercent);
+        		lastchange = round((change/sql_share_amt),2);
+        		finalVal = finalVal + change;
+        		try {
+					mysql.query("UPDATE companies SET value="+finalVal+",lastchange="+lastchange+",queue_val='0' WHERE name='miners';");
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+        		
+	        	// MASN
+	        	sql_current = get_int("companies","value","name","masons");
+	        	sql_queue = get_int("companies","queue_val","name","masons");
+	        	sql_share_amt = get_int("companies","share_amt","name","masons");
+	        	keepPercent = 1 - getConfig().getDouble("masons.bufferpercent");
+	        	change = 0;
+	        	lastchange = 0;
+	        	finalVal = sql_current;
+
+	        	change = sql_queue - sql_current;
+        		change = (int)Math.round(change * keepPercent);
+        		lastchange = round((change/sql_share_amt),2);
+        		finalVal = finalVal + change;
+        		try {
+					mysql.query("UPDATE companies SET value="+finalVal+",lastchange="+lastchange+",queue_val='0' WHERE name='masons';");
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
+	        	// DIGR
+	        	sql_current = get_int("companies","value","name","diggers");
+	        	sql_queue = get_int("companies","queue_val","name","diggers");
+	        	sql_share_amt = get_int("companies","share_amt","name","diggers");
+	        	keepPercent = 1 - getConfig().getDouble("diggers.bufferpercent");
+	        	change = 0;
+	        	lastchange = 0;
+	        	finalVal = sql_current;
+
+	        	change = sql_queue - sql_current;
+        		change = (int)Math.round(change * keepPercent);
+        		lastchange = round((change/sql_share_amt),2);
+        		finalVal = finalVal + change;
+        		try {
+					mysql.query("UPDATE companies SET value="+finalVal+",lastchange="+lastchange+",queue_val='0' WHERE name='diggers';");
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 	        }
 	    }, ticks);
 	}
@@ -743,7 +881,7 @@ public class BlockMarket extends JavaPlugin{
 	public String company_name_exists(Player player, String companyName) {
 		if (!validCompanies.contains(companyName)) { // Not a valid company name
 			if (!validSymbols.toLowerCase().contains(companyName)){ // Not a valid symbol name
-				player.sendMessage("[BlockMarket] That company doesn't exist.");
+				player.sendMessage(ChatColor.DARK_PURPLE + "[BlockMarket] " + ChatColor.RED + "Error: That company doesn't exist.");
 				return "error";
 			} else { // is a valid symbol name
 				// Convert symbol to the actual company name
@@ -763,8 +901,9 @@ public class BlockMarket extends JavaPlugin{
 				}
 				return companyName;
 			}
+		} else { // is a valid company name
+			return companyName;
 		}
-		return "error";
 	}
 	// === ROUND DOUBLES ===
 	public static double round(double value, int places) {
@@ -775,16 +914,16 @@ public class BlockMarket extends JavaPlugin{
 	    return bd.doubleValue();
 	}
 	
-	 private boolean setupEconomy() {
-	        if (getServer().getPluginManager().getPlugin("Vault") == null) {
-	            return false;
-	        }
-	        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-	        if (rsp == null) {
-	            return false;
-	        }
-	        econ = rsp.getProvider();
-	        return econ != null;
-	    }
+	private boolean setupEconomy() {
+		if (getServer().getPluginManager().getPlugin("Vault") == null) {
+		    return false;
+		}
+		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+		if (rsp == null) {
+		    return false;
+		}
+		econ = rsp.getProvider();
+		return econ != null;
+	 }
 	
 }

@@ -2,8 +2,10 @@ package io.github.egg101.BlockMarket;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 //import java.text.SimpleDateFormat;
 import java.util.Calendar;
 //import java.util.Date;
@@ -20,11 +22,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import de.diddiz.LogBlock.BlockChange;
-import de.diddiz.LogBlock.LogBlock;
-import de.diddiz.LogBlock.QueryParams;
-import de.diddiz.LogBlock.QueryParams.BlockChangeType;
 
 public class BlockMarket extends JavaPlugin{
 	Logger log;
@@ -67,170 +64,162 @@ public class BlockMarket extends JavaPlugin{
         {
             public void run()
             {
-            	//SimpleDateFormat ft = new SimpleDateFormat ("dd.MM.yyyy hh:mm:ss");
-                //String logblockLastTime = ft.format(dNow);
-            	log.info("Getting last changes and queueing!");
-        		int lmbrVal = get_int("companies","queue_val","name","lumber");
+            	int lmbrVal = get_int("companies","queue_val","name","lumber");
         		int carpVal = get_int("companies","queue_val","name","carpenters");
         		int mineVal = get_int("companies","queue_val","name","miners");
         		int masnVal = get_int("companies","queue_val","name","masons");
         		int digrVal = get_int("companies","queue_val","name","diggers");
         		
-        		LogBlock logblock = (LogBlock)getServer().getPluginManager().getPlugin("LogBlock");
-        		QueryParams params = new QueryParams(logblock);
-        		params.bct = BlockChangeType.CREATED;
-        		params.limit = -1;
-        		params.since = 30;
-        		params.world = getServer().getWorld(getConfig().getString("world"));
-        		params.needType = true;
-        		params.needData = true;
-        		params.needDate = true;
+            	Calendar now = Calendar.getInstance();
+            	now.add(Calendar.MINUTE, -30);
+            	SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            	String dfStr = df.format(now.getTime());
+            	
+            	ResultSet rs;
+        		try {
+        			rs = mysql.query("SELECT * FROM lb-world WHERE date > '"+dfStr+"';");
+        		} catch (SQLException e) {
+                    rs = null;
+                	e.printStackTrace();
+                }
 
             	log.info("queueing 4");
             	try {
-            	    for (BlockChange bc : logblock.getBlockChanges(params)) {
-            	        log.info("cr "+String.valueOf(bc.type));
-            	        switch (bc.type) {
-            	        	  // LMBR
-            	        	case 17:
-            	        		if (bc.data == 1) { //spruce log
-            	        			lmbrVal = lmbrVal + 175;
-            	        		} else if (bc.data == 2) { //birch log
-                	        		lmbrVal = lmbrVal + 170;
-                	        	} else if (bc.data == 3) { //jungle log
-            	        			lmbrVal = lmbrVal + 170;
-                	        	} else { // oak log
-                	        		lmbrVal = lmbrVal + 150;
-                	        	}
-            	        		break;
-            	        		
-            	        	  // CARP
-            	        	case 5:
-            	        		if (bc.data == 1) { //spruce plank
-            	        			carpVal = carpVal + 60;
-            	        		} else if (bc.data == 2) { //birch plank
-                	        		carpVal = carpVal + 55;
-                	        	} else if (bc.data == 3) { //jungle plank
-            	        			carpVal = carpVal + 55;
-                	        	} else { // oak plank
-                	        		carpVal = carpVal + 50;
-                	        	}
-            	        		break;
-            	        	case 53: //oak stairs
-            	        		carpVal = carpVal + 70;
-            	        		break;
-            	        	case 134: //spruce stairs
-            	        		carpVal = carpVal + 80;
-            	        		break;
-            	        	case 135: //birch stairs
-            	        		carpVal = carpVal + 75;
-            	        		break;
-            	        	case 136: //jungle stairs
-            	        		carpVal = carpVal + 75;
-            	        		break;
-            	        	case 44: //oak slab
-            	        		if (bc.data == 2) { //oak slab
-            	        			carpVal = carpVal + 30;
-            	        		} else if (bc.data == 3) { //cobble slab
-            	        			masnVal = masnVal + 40;
-            	        		} else if (bc.data == 4) { //brick slab
-            	        			masnVal = masnVal + 80;
-            	        		} else if (bc.data == 5) { //sb slab
-            	        			masnVal = masnVal + 70;
-            	        		} else { // stone slab
-            	        			masnVal = masnVal + 60;
-            	        		}
-            	        		break;
-            	        	case 126: //slabs
-            	        		if (bc.data == 1) { //spruce slab
-            	        			carpVal = carpVal + 40;
-            	        		} else if (bc.data == 2) { //birch slab
-                	        		carpVal = carpVal + 35;
-                	        	} else if (bc.data == 3) { //jungle slab
-            	        			carpVal = carpVal + 35;
-                	        	}
-            	        		break;
-            	        		
-            	        	  // MASN
-            	        	case 1: //stone
-            	        		masnVal = masnVal + 100;
-            	        		break;
-            	        	case 4: //cobble
-            	        		masnVal = masnVal + 100;
-            	        		break;
-            	        	case 45: //brick
-            	        		masnVal = masnVal + 100;
-            	        		break;
-            	        	case 98: //stonebrick
-            	        		masnVal = masnVal + 100;
-            	        		break;
-            	        	case 67: //cobblestairs
-            	        		masnVal = masnVal + 100;
-            	        		break;
-            	        	case 108: //brickstairs
-            	        		masnVal = masnVal + 100;
-            	        		break;
-            	        	case 109: //stonebrickstairs
-            	        		masnVal = masnVal + 100;
-            	        		break;
-            	        	// case 44: SEE CARP ABOVE
-            	        }
-            	    }
-            	} catch (SQLException ex) {
-            	    // Do nothing or throw an error if you want
+	        	    do {
+	                	log.info("cr "+String.valueOf(rs.getInt("type")));
+	        	        switch (rs.getInt("type")) {
+	        	        	  // LMBR
+	        	        	case 17:
+	        	        		if (rs.getInt("data") == 1) { //spruce log
+	        	        			lmbrVal = lmbrVal + 175;
+	        	        		} else if (rs.getInt("data") == 2) { //birch log
+	            	        		lmbrVal = lmbrVal + 170;
+	            	        	} else if (rs.getInt("data") == 3) { //jungle log
+	        	        			lmbrVal = lmbrVal + 170;
+	            	        	} else { // oak log
+	            	        		lmbrVal = lmbrVal + 150;
+	            	        	}
+	        	        		break;
+	        	        		
+	        	        	  // CARP
+	        	        	case 5:
+	        	        		if (rs.getInt("data") == 1) { //spruce plank
+	        	        			carpVal = carpVal + 60;
+	        	        		} else if (rs.getInt("data") == 2) { //birch plank
+	            	        		carpVal = carpVal + 55;
+	            	        	} else if (rs.getInt("data") == 3) { //jungle plank
+	        	        			carpVal = carpVal + 55;
+	            	        	} else { // oak plank
+	            	        		carpVal = carpVal + 50;
+	            	        	}
+	        	        		break;
+	        	        	case 53: //oak stairs
+	        	        		carpVal = carpVal + 70;
+	        	        		break;
+	        	        	case 134: //spruce stairs
+	        	        		carpVal = carpVal + 80;
+	        	        		break;
+	        	        	case 135: //birch stairs
+	        	        		carpVal = carpVal + 75;
+	        	        		break;
+	        	        	case 136: //jungle stairs
+	        	        		carpVal = carpVal + 75;
+	        	        		break;
+	        	        	case 44: //oak slab
+	        	        		if (rs.getInt("data") == 2) { //oak slab
+	        	        			carpVal = carpVal + 30;
+	        	        		} else if (rs.getInt("data") == 3) { //cobble slab
+	        	        			masnVal = masnVal + 40;
+	        	        		} else if (rs.getInt("data") == 4) { //brick slab
+	        	        			masnVal = masnVal + 80;
+	        	        		} else if (rs.getInt("data") == 5) { //sb slab
+	        	        			masnVal = masnVal + 70;
+	        	        		} else { // stone slab
+	        	        			masnVal = masnVal + 60;
+	        	        		}
+	        	        		break;
+	        	        	case 126: //slabs
+	        	        		if (rs.getInt("data") == 1) { //spruce slab
+	        	        			carpVal = carpVal + 40;
+	        	        		} else if (rs.getInt("data") == 2) { //birch slab
+	            	        		carpVal = carpVal + 35;
+	            	        	} else if (rs.getInt("data") == 3) { //jungle slab
+	        	        			carpVal = carpVal + 35;
+	            	        	}
+	        	        		break;
+	        	        		
+	        	        	  // MASN
+	        	        	case 1: //stone
+	        	        		masnVal = masnVal + 100;
+	        	        		break;
+	        	        	case 4: //cobble
+	        	        		masnVal = masnVal + 100;
+	        	        		break;
+	        	        	case 45: //brick
+	        	        		masnVal = masnVal + 100;
+	        	        		break;
+	        	        	case 98: //stonebrick
+	        	        		masnVal = masnVal + 100;
+	        	        		break;
+	        	        	case 67: //cobblestairs
+	        	        		masnVal = masnVal + 100;
+	        	        		break;
+	        	        	case 108: //brickstairs
+	        	        		masnVal = masnVal + 100;
+	        	        		break;
+	        	        	case 109: //stonebrickstairs
+	        	        		masnVal = masnVal + 100;
+	        	        		break;
+	        	        	// case 44: SEE CARP ABOVE
+	        	        } // end creation switch
+	
+	        	        	// Destruction
+	        	        log.info("de "+String.valueOf(rs.getInt("replaced")));
+	        	        switch (rs.getInt("replaced")) {
+	        	        	  // MINE
+	        	        	case 1: // stone
+	        	        		mineVal = mineVal + 100;
+	        	        		break;
+	        	        	case 16: // coal
+	        	        		mineVal = mineVal + 125;
+	        	        		break;
+	        	        	case 15: // iron
+	        	        		mineVal = mineVal + 150;
+	        	        		break;
+	        	        	case 14: // gold
+	        	        		mineVal = mineVal + 200;
+	        	        		break;
+	        	        	case 73: // redstone
+	        	        		mineVal = mineVal + 200;
+	        	        		break;
+	        	        	case 21: // lapis
+	        	        		mineVal = mineVal + 200;
+	        	        		break;
+	        	        	case 56: // diamond
+	        	        		mineVal = mineVal + 500;
+	        	        		break;
+	        	        		
+	          	        	  // DIGR
+	          	        	case 2: // grass
+	          	        		digrVal = digrVal + 75;
+	          	        		break;
+	          	        	case 3: // dirt
+	          	        		digrVal = digrVal + 75;
+	          	        		break;
+	          	        	case 12: // sand
+	          	        		digrVal = digrVal + 100;
+	          	        		break;
+	          	        	case 13: // gravel
+	          	        		digrVal = digrVal + 150;
+	          	        		break;
+	          	        	case 82: // clay
+	          	        		digrVal = digrVal + 175;
+	          	        		break;
+	        	        } // end destruction switch
+	        	    } while (rs.next());
+        	    } catch (SQLException e) {
+            		e.printStackTrace();
             	}
-
-            	// Destruction
-            	params.bct = BlockChangeType.DESTROYED;
-            	
-            	try {
-            	    for (BlockChange bc : logblock.getBlockChanges(params)) {
-            	        log.info("de "+String.valueOf(bc.replaced));
-            	        switch (bc.replaced) {
-            	        	  // MINE
-            	        	case 1: // stone
-            	        		mineVal = mineVal + 100;
-            	        		break;
-            	        	case 16: // coal
-            	        		mineVal = mineVal + 125;
-            	        		break;
-            	        	case 15: // iron
-            	        		mineVal = mineVal + 150;
-            	        		break;
-            	        	case 14: // gold
-            	        		mineVal = mineVal + 200;
-            	        		break;
-            	        	case 73: // redstone
-            	        		mineVal = mineVal + 200;
-            	        		break;
-            	        	case 21: // lapis
-            	        		mineVal = mineVal + 200;
-            	        		break;
-            	        	case 56: // diamond
-            	        		mineVal = mineVal + 500;
-            	        		break;
-            	        		
-              	        	  // DIGR
-              	        	case 2: // grass
-              	        		digrVal = digrVal + 75;
-              	        		break;
-              	        	case 3: // dirt
-              	        		digrVal = digrVal + 75;
-              	        		break;
-              	        	case 12: // sand
-              	        		digrVal = digrVal + 100;
-              	        		break;
-              	        	case 13: // gravel
-              	        		digrVal = digrVal + 150;
-              	        		break;
-              	        	case 82: // clay
-              	        		digrVal = digrVal + 175;
-              	        		break;
-            	        }
-            	    }
-		        } catch (SQLException ex) {
-					ex.printStackTrace();
-	        	}
             	log.info("queueing 5");
             	try {
 					mysql.query("UPDATE companies SET queue_val="+lmbrVal+" WHERE name='lumberjacks'");
@@ -257,6 +246,19 @@ public class BlockMarket extends JavaPlugin{
 		boolean error = false;
 		
     	if(cmd.getName().equalsIgnoreCase("bm")){
+    		// /bm help
+    		if (args.length == 1 && (args[1].equalsIgnoreCase("help") || args[1].equalsIgnoreCase("?"))) {
+    			player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + "BlockMarket Commands" + ChatColor.DARK_PURPLE +"----");
+				player.sendMessage(ChatColor.GREEN + "/bm buy [company] [#]" + ChatColor.AQUA + "Buys stocks from a company.");
+				player.sendMessage(ChatColor.GREEN + "/bm sell [company] [#]" + ChatColor.AQUA + "Sells stocks back to a company. There is tax for returning stocks!");
+				player.sendMessage(ChatColor.GREEN + "/bm info [company]" + ChatColor.AQUA + "Shows info about the company.");
+				player.sendMessage(ChatColor.GREEN + "/bm ticker" + ChatColor.AQUA + "Shows how much the value of 1 share changed since yesterday.");
+				player.sendMessage(ChatColor.GREEN + "/bm portfolio" + ChatColor.AQUA + "Shows what stocks you have in what companies and their values.");
+				player.sendMessage(ChatColor.GREEN + "/bm list companies" + ChatColor.AQUA + "Lists the available companies and their ticker symbols.");
+				player.sendMessage(ChatColor.GREEN + "/bm list shareholders [company]" + ChatColor.AQUA + "Lists the top shareholders in a company.");
+				player.sendMessage(ChatColor.GREEN + "/bm give [player] [company] [#]" + ChatColor.AQUA + "Transfers a stock to another player. No tax.");
+				player.sendMessage(ChatColor.DARK_PURPLE +"-----------------------");
+    		} // end /bm help
 			//-------- /bm buy [company] [amount]
     		if (args.length == 3 && args[0].equalsIgnoreCase("buy")){
     			String companyName = args[1].toLowerCase();
@@ -848,6 +850,34 @@ public class BlockMarket extends JavaPlugin{
         
         // If failed
         return 0;
+	}
+	public Date get_date(String table, String varSelect, String varWhere, String valWhere) {
+		// Get string from MySQL
+		ResultSet rs;
+		try {
+			rs = mysql.query("Select "+varSelect+" FROM "+table+" WHERE "+varWhere+"='"+valWhere+"';");
+		} catch (SQLException e) {
+            rs = null;
+        	e.printStackTrace();
+        }
+		
+		// Return string
+        try {
+            if (rs.first()) {
+                try {
+                    return rs.getDate(varSelect);
+                } catch (SQLException e) {
+                    rs = null;
+                	e.printStackTrace();
+                }
+            }
+        } catch (SQLException e) {
+       
+            e.printStackTrace();
+        }
+        
+        // If failed
+        return null;
 	}
 	public int entry_exists(String table, String varWhere, String valWhere) {
 		// Get string from MySQL

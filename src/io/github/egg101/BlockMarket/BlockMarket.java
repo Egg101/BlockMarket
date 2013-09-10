@@ -64,20 +64,23 @@ public class BlockMarket extends JavaPlugin{
         {
             public void run()
             {
+            	log.info("queueing 1");
             	int lmbrVal = get_int("companies","queue_val","name","lumber");
         		int carpVal = get_int("companies","queue_val","name","carpenters");
         		int mineVal = get_int("companies","queue_val","name","miners");
         		int masnVal = get_int("companies","queue_val","name","masons");
         		int digrVal = get_int("companies","queue_val","name","diggers");
-        		
+
+            	log.info("queueing 2");
             	Calendar now = Calendar.getInstance();
             	now.add(Calendar.MINUTE, -30);
             	SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             	String dfStr = df.format(now.getTime());
-            	
+
+            	log.info("queueing 3");
             	ResultSet rs;
         		try {
-        			rs = mysql.query("SELECT * FROM lb-world WHERE date > '"+dfStr+"';");
+        			rs = mysql.query("SELECT * FROM `lb-"+getConfig().getString("world")+"` WHERE date >= '"+dfStr+"';");
         		} catch (SQLException e) {
                     rs = null;
                 	e.printStackTrace();
@@ -85,136 +88,138 @@ public class BlockMarket extends JavaPlugin{
 
             	log.info("queueing 4");
             	try {
+            		rs.first();
 	        	    do {
-	                	log.info("cr "+String.valueOf(rs.getInt("type")));
+	                	log.info("queueing INSIDE 1");
+	                	log.info(String.valueOf(rs.getInt("type")));
 	        	        switch (rs.getInt("type")) {
-	        	        	  // LMBR
-	        	        	case 17:
-	        	        		if (rs.getInt("data") == 1) { //spruce log
-	        	        			lmbrVal = lmbrVal + 175;
-	        	        		} else if (rs.getInt("data") == 2) { //birch log
-	            	        		lmbrVal = lmbrVal + 170;
-	            	        	} else if (rs.getInt("data") == 3) { //jungle log
-	        	        			lmbrVal = lmbrVal + 170;
-	            	        	} else { // oak log
-	            	        		lmbrVal = lmbrVal + 150;
-	            	        	}
-	        	        		break;
-	        	        		
 	        	        	  // CARP
 	        	        	case 5:
 	        	        		if (rs.getInt("data") == 1) { //spruce plank
-	        	        			carpVal = carpVal + 60;
+	        	        			carpVal = carpVal + getConfig().getInt("carpenters.value.placespruceplank");
 	        	        		} else if (rs.getInt("data") == 2) { //birch plank
-	            	        		carpVal = carpVal + 55;
+	            	        		carpVal = carpVal + getConfig().getInt("carpenters.value.placebirchplank");
 	            	        	} else if (rs.getInt("data") == 3) { //jungle plank
-	        	        			carpVal = carpVal + 55;
+	        	        			carpVal = carpVal + getConfig().getInt("carpenters.value.placejungleplank");
 	            	        	} else { // oak plank
-	            	        		carpVal = carpVal + 50;
+	            	        		carpVal = carpVal + getConfig().getInt("carpenters.value.placeoakplank");
 	            	        	}
 	        	        		break;
 	        	        	case 53: //oak stairs
-	        	        		carpVal = carpVal + 70;
+	        	        		carpVal = carpVal + getConfig().getInt("carpenters.value.placeoakstairs");
 	        	        		break;
 	        	        	case 134: //spruce stairs
-	        	        		carpVal = carpVal + 80;
+	        	        		carpVal = carpVal + getConfig().getInt("carpenters.value.placesprucestairs");
 	        	        		break;
 	        	        	case 135: //birch stairs
-	        	        		carpVal = carpVal + 75;
+	        	        		carpVal = carpVal + getConfig().getInt("carpenters.value.placebirchstairs");
 	        	        		break;
 	        	        	case 136: //jungle stairs
-	        	        		carpVal = carpVal + 75;
+	        	        		carpVal = carpVal + getConfig().getInt("carpenters.value.placejunglestairs");
 	        	        		break;
 	        	        	case 44: //oak slab
 	        	        		if (rs.getInt("data") == 2) { //oak slab
-	        	        			carpVal = carpVal + 30;
+	        	        			carpVal = carpVal + getConfig().getInt("carpenters.value.placeoakslab");
 	        	        		} else if (rs.getInt("data") == 3) { //cobble slab
-	        	        			masnVal = masnVal + 40;
+	        	        			masnVal = masnVal + getConfig().getInt("masons.value.placecobbleslab");
 	        	        		} else if (rs.getInt("data") == 4) { //brick slab
-	        	        			masnVal = masnVal + 80;
+	        	        			masnVal = masnVal + getConfig().getInt("masons.value.placebrickslab");
 	        	        		} else if (rs.getInt("data") == 5) { //sb slab
-	        	        			masnVal = masnVal + 70;
+	        	        			masnVal = masnVal + getConfig().getInt("masons.value.placestonebrickslab");
 	        	        		} else { // stone slab
-	        	        			masnVal = masnVal + 60;
+	        	        			masnVal = masnVal + getConfig().getInt("masons.value.placestoneslab");
 	        	        		}
 	        	        		break;
 	        	        	case 126: //slabs
 	        	        		if (rs.getInt("data") == 1) { //spruce slab
-	        	        			carpVal = carpVal + 40;
+	        	        			carpVal = carpVal + getConfig().getInt("carpenters.value.placespruceslab");
 	        	        		} else if (rs.getInt("data") == 2) { //birch slab
-	            	        		carpVal = carpVal + 35;
+	            	        		carpVal = carpVal + getConfig().getInt("carpenters.value.placebirchslab");
 	            	        	} else if (rs.getInt("data") == 3) { //jungle slab
-	        	        			carpVal = carpVal + 35;
+	        	        			carpVal = carpVal + getConfig().getInt("carpenters.value.placejungleslab");
 	            	        	}
 	        	        		break;
 	        	        		
 	        	        	  // MASN
 	        	        	case 1: //stone
-	        	        		masnVal = masnVal + 100;
+	        	        		masnVal = masnVal + getConfig().getInt("masons.value.placestone");
 	        	        		break;
 	        	        	case 4: //cobble
-	        	        		masnVal = masnVal + 100;
+	        	        		masnVal = masnVal + getConfig().getInt("masons.value.placecobble");
 	        	        		break;
 	        	        	case 45: //brick
-	        	        		masnVal = masnVal + 100;
+	        	        		masnVal = masnVal + getConfig().getInt("masons.value.placebrick");
 	        	        		break;
 	        	        	case 98: //stonebrick
-	        	        		masnVal = masnVal + 100;
+	        	        		masnVal = masnVal + getConfig().getInt("masons.value.placestonebrick");
 	        	        		break;
 	        	        	case 67: //cobblestairs
-	        	        		masnVal = masnVal + 100;
+	        	        		masnVal = masnVal + getConfig().getInt("masons.value.placecobblestairs");
 	        	        		break;
 	        	        	case 108: //brickstairs
-	        	        		masnVal = masnVal + 100;
+	        	        		masnVal = masnVal + getConfig().getInt("masons.value.placebrickstairs");
 	        	        		break;
 	        	        	case 109: //stonebrickstairs
-	        	        		masnVal = masnVal + 100;
+	        	        		masnVal = masnVal + getConfig().getInt("masons.value.placestonebrickstairs");
 	        	        		break;
 	        	        	// case 44: SEE CARP ABOVE
 	        	        } // end creation switch
 	
 	        	        	// Destruction
-	        	        log.info("de "+String.valueOf(rs.getInt("replaced")));
+	                	log.info("queueing INSIDE 2");
 	        	        switch (rs.getInt("replaced")) {
 	        	        	  // MINE
 	        	        	case 1: // stone
-	        	        		mineVal = mineVal + 100;
+	        	        		mineVal = mineVal + getConfig().getInt("miners.value.breakstone");
 	        	        		break;
 	        	        	case 16: // coal
-	        	        		mineVal = mineVal + 125;
+	        	        		mineVal = mineVal + getConfig().getInt("miners.value.breakcoal");
 	        	        		break;
 	        	        	case 15: // iron
-	        	        		mineVal = mineVal + 150;
+	        	        		mineVal = mineVal + getConfig().getInt("miners.value.breakiron");
 	        	        		break;
 	        	        	case 14: // gold
-	        	        		mineVal = mineVal + 200;
+	        	        		mineVal = mineVal + getConfig().getInt("miners.value.breakgold");
 	        	        		break;
 	        	        	case 73: // redstone
-	        	        		mineVal = mineVal + 200;
+	        	        		mineVal = mineVal + getConfig().getInt("miners.value.breakredstone");
 	        	        		break;
 	        	        	case 21: // lapis
-	        	        		mineVal = mineVal + 200;
+	        	        		mineVal = mineVal + getConfig().getInt("miners.value.breaklapis");
 	        	        		break;
 	        	        	case 56: // diamond
-	        	        		mineVal = mineVal + 500;
+	        	        		mineVal = mineVal + getConfig().getInt("miners.value.breakdiamond");
 	        	        		break;
 	        	        		
 	          	        	  // DIGR
 	          	        	case 2: // grass
-	          	        		digrVal = digrVal + 75;
+	          	        		digrVal = digrVal + getConfig().getInt("diggers.value.breakgrass");
 	          	        		break;
 	          	        	case 3: // dirt
-	          	        		digrVal = digrVal + 75;
+	          	        		digrVal = digrVal + getConfig().getInt("diggers.value.breakdirt");
 	          	        		break;
 	          	        	case 12: // sand
-	          	        		digrVal = digrVal + 100;
+	          	        		digrVal = digrVal + getConfig().getInt("diggers.value.breaksand");
 	          	        		break;
 	          	        	case 13: // gravel
-	          	        		digrVal = digrVal + 150;
+	          	        		digrVal = digrVal + getConfig().getInt("diggers.value.breakgravel");
 	          	        		break;
 	          	        	case 82: // clay
-	          	        		digrVal = digrVal + 175;
+	          	        		digrVal = digrVal + getConfig().getInt("diggers.value.breakclay");
 	          	        		break;
+		        	        	  // LMBR
+	        	        	case 17:
+	        	        		if (rs.getInt("data") == 1) { //spruce log
+	        	        			lmbrVal = lmbrVal + getConfig().getInt("lumberjacks.value.breaksprucelog");
+	        	        		} else if (rs.getInt("data") == 2) { //birch log
+	            	        		lmbrVal = lmbrVal + getConfig().getInt("lumberjacks.value.breakbirchlog");
+	            	        	} else if (rs.getInt("data") == 3) { //jungle log
+	        	        			lmbrVal = lmbrVal + getConfig().getInt("lumberjacks.value.breakjunglelog");
+	            	        	} else { // oak log
+	            	        		lmbrVal = lmbrVal + getConfig().getInt("lumberjacks.value.breakoaklog");
+	            	        	}
+	        	        		break;
+	        	        		
 	        	        } // end destruction switch
 	        	    } while (rs.next());
         	    } catch (SQLException e) {
@@ -244,21 +249,22 @@ public class BlockMarket extends JavaPlugin{
 		Player player = (Player) sender;
 		String playername = player.getName();
 		boolean error = false;
-		
+
     	if(cmd.getName().equalsIgnoreCase("bm")){
     		// /bm help
-    		if (args.length == 1 && (args[1].equalsIgnoreCase("help") || args[1].equalsIgnoreCase("?"))) {
+    		if (args.length == 1 && (args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("?"))) {
     			player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + "BlockMarket Commands" + ChatColor.DARK_PURPLE +"----");
-				player.sendMessage(ChatColor.GREEN + "/bm buy [company] [#]" + ChatColor.AQUA + "Buys stocks from a company.");
-				player.sendMessage(ChatColor.GREEN + "/bm sell [company] [#]" + ChatColor.AQUA + "Sells stocks back to a company. There is tax for returning stocks!");
-				player.sendMessage(ChatColor.GREEN + "/bm info [company]" + ChatColor.AQUA + "Shows info about the company.");
-				player.sendMessage(ChatColor.GREEN + "/bm ticker" + ChatColor.AQUA + "Shows how much the value of 1 share changed since yesterday.");
-				player.sendMessage(ChatColor.GREEN + "/bm portfolio" + ChatColor.AQUA + "Shows what stocks you have in what companies and their values.");
-				player.sendMessage(ChatColor.GREEN + "/bm list companies" + ChatColor.AQUA + "Lists the available companies and their ticker symbols.");
-				player.sendMessage(ChatColor.GREEN + "/bm list shareholders [company]" + ChatColor.AQUA + "Lists the top shareholders in a company.");
-				player.sendMessage(ChatColor.GREEN + "/bm give [player] [company] [#]" + ChatColor.AQUA + "Transfers a stock to another player. No tax.");
+				player.sendMessage(ChatColor.GREEN + "/bm buy [company] [#]" + ChatColor.AQUA + "  Buys stocks from a company.");
+				player.sendMessage(ChatColor.GREEN + "/bm sell [company] [#]" + ChatColor.AQUA + "  Sells stocks back to a company. There is tax for returning stocks!");
+				player.sendMessage(ChatColor.GREEN + "/bm info [company]" + ChatColor.AQUA + "  Shows info about the company.");
+				player.sendMessage(ChatColor.GREEN + "/bm ticker" + ChatColor.AQUA + "  Shows how much the value of 1 share changed since yesterday.");
+				player.sendMessage(ChatColor.GREEN + "/bm portfolio" + ChatColor.AQUA + "  Shows what stocks you have in what companies and their values.");
+				player.sendMessage(ChatColor.GREEN + "/bm list companies" + ChatColor.AQUA + "  Lists the available companies and their ticker symbols.");
+				player.sendMessage(ChatColor.GREEN + "/bm list shareholders [company]" + ChatColor.AQUA + "  Lists the top shareholders in a company.");
+				player.sendMessage(ChatColor.GREEN + "/bm give [player] [company] [#]" + ChatColor.AQUA + "  Transfers a stock to another player. There is no tax.");
 				player.sendMessage(ChatColor.DARK_PURPLE +"-----------------------");
     		} // end /bm help
+    		
 			//-------- /bm buy [company] [amount]
     		if (args.length == 3 && args[0].equalsIgnoreCase("buy")){
     			String companyName = args[1].toLowerCase();
@@ -281,7 +287,10 @@ public class BlockMarket extends JavaPlugin{
     			int newshareamount = sql_playershares + amount;
 
     			// Error checking
-    			
+    			if (getConfig().getBoolean(companyName+".open") == false) {
+    				player.sendMessage("[BlockMarket] Buying and selling shares in that company is closed.");
+    				error = true;
+    			}
     			if (sql_shares_unsold == 0) {
     				player.sendMessage("[BlockMarket] All shares in that company are sold out.");
     				error = true;
@@ -292,6 +301,10 @@ public class BlockMarket extends JavaPlugin{
     			}
     			if (amount > sql_shares_unsold ) {
     				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You can't buy that many shares. There are only " + sql_shares_unsold + " shares for sale in that company.");
+    				error = true;
+    			}
+    			if (econ.getBalance(playername) < cost) {
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You don't have enough money.");
     				error = true;
     			}
     			
@@ -325,7 +338,6 @@ public class BlockMarket extends JavaPlugin{
     			}
 			} // END /bm buy [company] [amount]
 
-
 			//-------- /bm sell [company] [amount]
     		if (args.length == 3 && args[0].equalsIgnoreCase("sell")){
     			String companyName = args[1].toLowerCase();
@@ -350,6 +362,10 @@ public class BlockMarket extends JavaPlugin{
     			payment = round(payment, 2);
     			
     			// Error checking
+    			if (getConfig().getBoolean(companyName+".open") == false) {
+    				player.sendMessage("[BlockMarket] Buying and selling shares in that company is closed.");
+    				error = true;
+    			}
     			if (amount == 0) {
     				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You can't sell 0 shares.");
     				error = true;
@@ -387,10 +403,11 @@ public class BlockMarket extends JavaPlugin{
     		if (args.length == 2 && args[0].equalsIgnoreCase("info")){
     			String companyName = args[1].toLowerCase();
     			String showCompanyName = companyName.substring(0, 1).toUpperCase() + companyName.substring(1);
+    			
     			// Preliminary error check before SQL happens
     			companyName = company_name_exists(player,companyName);
     			if (companyName == "error") { return false; } // Giving error message is already handled in method. Exits onCommand
-
+    			
     			String sql_symbol =		get_str("companies","symbol","name",companyName);
     			int sql_lastchange =	get_int("companies","lastchange","name",companyName);
     			int sql_value = 		get_int("companies","value","name",companyName);
@@ -401,8 +418,8 @@ public class BlockMarket extends JavaPlugin{
     			double cfg_returntax = 	getConfig().getDouble(companyName + ".returntax");
     			
     			String lastchangePrefix = "";
-    			if (sql_lastchange > 0) { lastchangePrefix = "+"; }
-    			else if (sql_lastchange < 0) { lastchangePrefix = ""; }
+    			if (sql_lastchange > 0) { lastchangePrefix = "§a +"; }
+    			else if (sql_lastchange < 0) { lastchangePrefix = "§c "; } // no - prefix because it is already on the value
 
 				player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + "Info for "+showCompanyName+ ChatColor.DARK_PURPLE +"----");
 				player.sendMessage(ChatColor.BLUE + "Ticker: " + ChatColor.AQUA + sql_symbol + " " + lastchangePrefix + sql_lastchange);
@@ -414,13 +431,13 @@ public class BlockMarket extends JavaPlugin{
 				player.sendMessage(ChatColor.DARK_PURPLE +"--------------------");
     			
 			} // end /bm info [company]
-    		
+
 			//-------- /bm ticker
     		if (args.length == 1 && args[0].equalsIgnoreCase("ticker")){
     			String[] companyNames = {"lumberjacks", "carpenters", "miners", "masons", "diggers"};
     			String[] tickerSymbols = new String[5];
     			double[] lastChanges = new double[5];
-    			
+
     			for (int i = 0; i<5; i++) {
     				tickerSymbols[i] = get_str("companies","symbol","name",companyNames[i]);
         			lastChanges[i] = get_double("companies","lastchange","name",companyNames[i]);
@@ -430,7 +447,7 @@ public class BlockMarket extends JavaPlugin{
     			String combinedMessage = "§5Ticker:   ";
     			for (int i = 0; i<5; i++) {
     				combinedMessage = combinedMessage.concat("§7"+tickerSymbols[i]);
-    				
+
     				if (lastChanges[i] > 0) {
     					combinedMessage = combinedMessage.concat("§a +");
     				} else if (lastChanges[i] < 0) {
@@ -443,9 +460,9 @@ public class BlockMarket extends JavaPlugin{
     			}
     			player.sendMessage(combinedMessage);
 			} // end /bm ticker
-    		
+
 			//-------- /bm portfolio (username)
-    		if (args[0].equalsIgnoreCase("portfolio")){
+    		if (args.length > 0 && args[0].equalsIgnoreCase("portfolio")){
     			if (args.length == 1) { // if no player specified
     				int sharesLMBR = get_int("shareholders","lumberjacks","playername",playername);
     				int sharesCARP = get_int("shareholders","carpenters","playername",playername);
@@ -460,6 +477,31 @@ public class BlockMarket extends JavaPlugin{
     				int playerValueDIGR = sharesDIGR*(get_int("companies","value","name","diggers"))/(get_int("companies","share_amt","name","diggers"));
 
     				player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + "Your Stock Portfolio" + ChatColor.DARK_PURPLE +"----");
+    				player.sendMessage(ChatColor.BLUE + "Lumberjacks (LMBR): " + ChatColor.AQUA + sharesLMBR + " shares, total value " + ChatColor.GREEN + "$"+playerValueLMBR);
+    				player.sendMessage(ChatColor.BLUE + "Carpenters (CARP): " + ChatColor.AQUA + sharesCARP + " shares, total value " + ChatColor.GREEN + "$"+playerValueCARP);
+    				player.sendMessage(ChatColor.BLUE + "Miners (MINE): " + ChatColor.AQUA + sharesMINE + " shares, total value " + ChatColor.GREEN + "$"+playerValueMINE);
+    				player.sendMessage(ChatColor.BLUE + "Masons (MASN): " + ChatColor.AQUA + sharesMASN + " shares, total value " + ChatColor.GREEN + "$"+playerValueMASN);
+    				player.sendMessage(ChatColor.BLUE + "Diggers (DIGR): " + ChatColor.AQUA + sharesDIGR + " shares, total value " + ChatColor.GREEN + "$"+playerValueDIGR);
+    				player.sendMessage(ChatColor.DARK_PURPLE +"------------------------");
+    			
+    			} else if (args.length == 2) { // if a player is specified
+    				if (entry_exists("shareholders","playername",args[1]) == 0) {
+    					player.sendMessage(ChatColor.DARK_PURPLE + "[BlockMarket] " + ChatColor.RED + "That player doesn't own any stocks! (case sensitive)");
+    					return false;
+    				}
+    				int sharesLMBR = get_int("shareholders","lumberjacks","playername",args[1]);
+    				int sharesCARP = get_int("shareholders","carpenters","playername",args[1]);
+    				int sharesMINE = get_int("shareholders","miners","playername",args[1]);
+    				int sharesMASN = get_int("shareholders","masons","playername",args[1]);
+    				int sharesDIGR = get_int("shareholders","diggers","playername",args[1]);
+    				
+    				int playerValueLMBR = sharesLMBR*(get_int("companies","value","name","lumberjacks"))/(get_int("companies","share_amt","name","lumberjacks"));
+    				int playerValueCARP = sharesCARP*(get_int("companies","value","name","carpenters"))/(get_int("companies","share_amt","name","carpenters"));
+    				int playerValueMINE = sharesMINE*(get_int("companies","value","name","miners"))/(get_int("companies","share_amt","name","miners"));
+    				int playerValueMASN = sharesMASN*(get_int("companies","value","name","masons"))/(get_int("companies","share_amt","name","masons"));
+    				int playerValueDIGR = sharesDIGR*(get_int("companies","value","name","diggers"))/(get_int("companies","share_amt","name","diggers"));
+
+    				player.sendMessage(ChatColor.DARK_PURPLE +"----" + ChatColor.LIGHT_PURPLE + args[1] + "'s Stock Portfolio" + ChatColor.DARK_PURPLE +"----");
     				player.sendMessage(ChatColor.BLUE + "Lumberjacks (LMBR): " + ChatColor.AQUA + sharesLMBR + " shares, total value " + ChatColor.GREEN + "$"+playerValueLMBR);
     				player.sendMessage(ChatColor.BLUE + "Carpenters (CARP): " + ChatColor.AQUA + sharesCARP + " shares, total value " + ChatColor.GREEN + "$"+playerValueCARP);
     				player.sendMessage(ChatColor.BLUE + "Miners (MINE): " + ChatColor.AQUA + sharesMINE + " shares, total value " + ChatColor.GREEN + "$"+playerValueMINE);
@@ -506,7 +548,6 @@ public class BlockMarket extends JavaPlugin{
     				try {
 						if (rs.first()) {
 							    do {
-				    				log.info("4");
 							    	shareholders[a] = rs.getString("playername");
 							    	shares[a] = rs.getInt(companyName);
 							        a++;
@@ -523,7 +564,6 @@ public class BlockMarket extends JavaPlugin{
     					player.sendMessage(ChatColor.BLUE + shareholders[i] + ": " + String.valueOf(shares[i]) + " shares");
     					
     				}
-    				log.info("6");
     				player.sendMessage(ChatColor.DARK_PURPLE +"-----------------------------");
 
     				
@@ -538,34 +578,35 @@ public class BlockMarket extends JavaPlugin{
     		if (args.length == 4 && args[0].equalsIgnoreCase("give")){
     			String companyName = args[2].toLowerCase();
     			int amount = Integer.parseInt(args[3]);
-    			
+
     			// Preliminary error check before SQL happens
     			companyName = company_name_exists(player,companyName);
     			if (companyName == "error") { return false; } // Giving error message is already handled in method. Exits onCommand
 
     			int sql_playershares = get_int("shareholders",companyName,"playername",playername);
-
     			int newshares = amount;
-				if (entry_exists("shareholders","playername",args[1]) == 1) {
-					int sql_currentshares = get_int("shareholders",companyName,"playername",args[1]);
-					newshares = sql_currentshares + amount;
-				}
+    			int newshares2 = sql_playershares - amount;
     			// Error checking
     			if (sql_playershares < amount) {
     				player.sendMessage(ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "You only have " +sql_playershares+" shares to transfer.");
     				error = true;
     			}
-    			if (!Bukkit.getServer().getPlayer(args[2]).isOnline()) {
+    			if (!Bukkit.getServer().getPlayer(args[1]).isOnline()) {
     				player.sendMessage(ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.RED + "The recipient is not online. Remember it's case sensitive!");
     				error = true;
     			}
     			
+				if (entry_exists("shareholders","playername",args[1]) == 1) {
+					int sql_currentshares = get_int("shareholders",companyName,"playername",args[1]);
+					newshares = sql_currentshares + amount;
+				}
+
     			// If no errors
     			if (error == false) {
     				// Create player entry with default values if doesn't exist
     				if (entry_exists("shareholders","playername",args[1]) == 0) {
     					try {
-							mysql.query("INSERT INTO shareholders VALUES ('"+playername+"',0,0,0,0,0);");
+							mysql.query("INSERT INTO shareholders VALUES ('"+args[1]+"',0,0,0,0,0);");
 						} catch (SQLException e) {
 							e.printStackTrace();
 						}
@@ -573,10 +614,11 @@ public class BlockMarket extends JavaPlugin{
     				// Add shares bought to player
 					try {
 						mysql.query("UPDATE shareholders SET "+companyName+"="+newshares+" WHERE playername='"+args[1]+"';");
+						mysql.query("UPDATE shareholders SET "+companyName+"="+newshares2+" WHERE playername='"+playername+"';");
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
-    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.GREEN + "Successfully transferred "+amount+" shares to "+args[2]+".");
+    				player.sendMessage (ChatColor.DARK_PURPLE +"[BlockMarket] " + ChatColor.GREEN + "Successfully transferred "+amount+" shares to "+args[1]+".");
     			}
 			} // end /bm give [playername] [company] [amount]
 
@@ -909,7 +951,11 @@ public class BlockMarket extends JavaPlugin{
 	}
 	
 	public String company_name_exists(Player player, String companyName) {
-		if (!validCompanies.contains(companyName)) { // Not a valid company name
+		if ((!companyName.equalsIgnoreCase("lumberjacks")) && 
+			(!companyName.equalsIgnoreCase("carpenters")) &&
+			(!companyName.equalsIgnoreCase("miners")) &&
+			(!companyName.equalsIgnoreCase("masons")) &&
+			(!companyName.equalsIgnoreCase("diggers"))) { // Not a valid company name
 			if (!validSymbols.toLowerCase().contains(companyName)){ // Not a valid symbol name
 				player.sendMessage(ChatColor.DARK_PURPLE + "[BlockMarket] " + ChatColor.RED + "Error: That company doesn't exist.");
 				return "error";
@@ -924,6 +970,9 @@ public class BlockMarket extends JavaPlugin{
 					break;
 				case "mine":
 					companyName = "miners";
+					break;
+				case "masn":
+					companyName = "masons";
 					break;
 				case "digr":
 					companyName = "diggers";

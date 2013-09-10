@@ -8,7 +8,7 @@ mysqlinfo:
   database: mydatabase
   username: myusername
   password: mypassword
-  
+
 lumberjacks:
   open: true
   shares: 1200
@@ -16,7 +16,7 @@ lumberjacks:
     breakoaklog: 150
     breaksprucelog: 175
     breakbirchlog: 170
-    breakjunglewood: 170
+    breakjunglelog: 170
   returntax: 0.12
   bufferpercent: 0.60
 
@@ -46,6 +46,7 @@ miners:
   shares: 1500
   value:
     breakstone: 100
+    breakcoal: 120
     breakiron: 150
     breakgold: 200
     breakredstone: 200
@@ -80,6 +81,7 @@ diggers:
   open: true
   shares: 1500
   value:
+    breakgrass: 85
     breakdirt: 75
     breaksand: 100
     breakgravel: 150
